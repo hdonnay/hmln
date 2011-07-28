@@ -1,0 +1,14 @@
+#!/bin/bash
+# hmln rule file.
+# == Should contain a funtion called hmln_(filename). Inside should be a varible called 'prefix'.
+# ==> 'prefix' should have a trailing slash.
+# Valid options are:
+#                   testAndLink
+#                   testAndLinkPrefix
+#                   createFile
+#                   createFileInPrefix
+#                   createDir
+#                   createSymlink
+hmln_template() {
+    prefix=''
+}

@@ -1,0 +1,13 @@
+#!/bin/bash
+# hmln config file.
+# == Should contain a funtion called hmln_(filename). Inside should be a varible called 'prefix'.
+hmln_mutt()
+{
+  prefix='mutt/'
+  testAndLinkPrefix
+  createDir temp
+  createFileInPrefix mailboxes.local
+  createFileInPrefix override.local
+  createFileInPrefix folderhooks.local
+  createSymlink default.local *.muttrc
+}

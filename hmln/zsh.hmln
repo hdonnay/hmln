@@ -1,0 +1,17 @@
+#!/bin/bash
+# hmln rule file.
+# == Should contain a funtion called hmln_(filename). Inside should be a varible called 'prefix'.
+# Valid options are:
+#                   testAndLink
+#                   testAndLinkPrefix
+#                   createFile
+#                   createFileInPrefix
+#                   createDir
+hmln_zsh()
+{
+  prefix='zsh/'
+  testAndLink zshrc
+  testAndLink zlogin
+  testAndLink zprofile
+  testAndLink zsh_aliases
+}

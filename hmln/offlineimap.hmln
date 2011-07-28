@@ -1,0 +1,6 @@
+#!/bin/bash
+hmln_offlineimap()
+{
+  prefix=''
+  testAndLink offlineimaprc
+}
