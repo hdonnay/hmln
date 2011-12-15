@@ -1,0 +1,116 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Config::GitLike;
+use FindBin qw($Bin);
+use Switch;
+use Data::Dumper;
+
+our $VERSION = "0.1";
+
+my @args = @ARGV;
+
+my $config = Config::GitLike->new(confname => 'hmlnrc');
+
+my $debug = $config->get( key => 'hmln.debug', as => 'bool', );
+if ($debug) {
+    print "-- Debug Enabled --\n";
+    print "args: "; foreach (@args) { print "$_ " }; print "\n";
+    print "      ".scalar @args."\n";
+    print $config->dump."\n";
+    my %temp = $config->dump;
+    print Dumper %temp;
+};
+
+sub _help {
+    print "hmln -- v.$VERSION\n";
+    print "\n";
+    print "One of the following subcommands are required, and exclusionary.\n";
+    print "\n";
+    print "\tadd <url> [link target]\n";
+    print "\t\tAdd the git repository at specified url to the hmln config, add\n";
+    print "\t\tit as a submodule, and link it into place, as near as we can\n";
+    print "\t\tguess.\n";
+    print "\tls\n";
+    print "\t\tList currently selected git submodules.\n";
+    print "\tinit\n";
+    print "\t\tRead the config file and create a .gitconfig file, run\n";
+    print "\t\t`git submodule init' and `git submodule update', then create\n";
+    print "\t\tsymbolic links as specified.\n";
+    print "\tupdate\n";
+    print "\t\tUpdate all the submodules contained in the dotfile directory.\n";
+    print "\thelp\n";
+    print "\t\tPrint this message.\n";
+    print "\trm\n";
+    print "\t\tNot yet implemented.\n";
+    print "\n";
+    print "Project homepage is http://www.hdonnay.com/projects/hmln\n";
+    exit 0;
+}
+
+sub _add {
+    if ($debug) {print "begin add\n"};
+
+    if (scalar @args < 2 ) {
+        _help;
+    };
+    my $link;
+    my @command = ( "git", "submodule", "add", "$args[1]" );
+    system(@command);
+    if ($debug) {print "$args[1]\n"};
+    my $folder = $args[1];
+    $folder =~ /.*\/(.+?)\.git/;
+    $folder = $1;
+    if ($debug) {print "$folder\n"};
+    if (exists $args[2]) {
+        $link = $args[2];
+    }
+    else {
+        $link = "~/.".$folder;
+    };
+    if ($debug) {print "$link\n"};
+    symlink $folder, $link;
+    $config->group_set(
+        filename => @{ $config->config_files }[-1],
+        [
+            (key => "submodule.$folder.url",
+            value => $args[1]),
+            (key => "submodule.$folder.path",
+            value => $folder),
+            (key => "submodule.$folder.link",
+            value => $link),
+        ]
+    );
+    if ($debug) {$config->load; print $config->dump."\n"; };
+    exit(0);
+}
+
+sub _list {
+    my %output = $config->get_regexp(
+        key => "submodule\.(.+?)\.path",
+    );
+    foreach (sort keys %output) {
+        print " $output{$_}\n";
+    };
+    exit(0);
+}
+
+sub _init {
+}
+
+sub _update {
+}
+
+if ($debug) {print "switch: $args[0]\n"};
+
+switch ($args[0]) {
+    case "help"   { _help }
+    case "rm"     { _help }
+    case "add"    { _add }
+    case "ls"     { _list }
+    case "update" { _update }
+    case "init"   { _init }
+    else          { _help }
+}
