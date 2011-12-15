@@ -1,8 +1,0 @@
-#!/bin/bash
-# hmln config file.
-# == Should contain a funtion called hmln_(filename). Inside should be a varible called 'prefix'.
-hmln_msmtp ()
-{
-  prefix=''
-  testAndLink msmtprc
-}

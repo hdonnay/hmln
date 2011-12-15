@@ -1,5 +1,0 @@
-hmln_Xdefaults()
-{
-  prefix=''
-  testAndLink Xdefaults
-}
