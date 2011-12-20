@@ -72,15 +72,16 @@ sub _add {
     };
     if ($debug) {print "$link\n"};
     symlink $folder, $link;
+    if ($debug) {print "linking done, write config.\n"};
     $config->group_set(
-        filename => @{ $config->config_files }[-1],
+        ${ $config->config_files }[-1],
         [
-            (key => "submodule.$folder.url",
-            value => $args[1]),
-            (key => "submodule.$folder.path",
-            value => $folder),
-            (key => "submodule.$folder.link",
-            value => $link),
+            {key => "submodule.$folder.url",
+            value => $args[1]},
+            {key => "submodule.$folder.path",
+            value => $folder},
+            {key => "submodule.$folder.link",
+            value => $link},
         ]
     );
     if ($debug) {$config->load; print $config->dump."\n"; };
@@ -101,6 +102,13 @@ sub _init {
 }
 
 sub _update {
+    if ($debug) {print "begin update\n"};
+
+    if (scalar @args > 1) {
+        print "+Extra arguments supplied, ignoring.\n";
+    };
+    my @command = ("git", "submodule", "update");
+    system(@command);
 }
 
 if ($debug) {print "switch: $args[0]\n"};

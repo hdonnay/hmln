@@ -1,3 +1,7 @@
 [hmln]
     debug = true
     autolink = true
+[submodule "vim"]
+	url = https://github.com/hdonnay/vim.git
+	path = vim
+	link = ~/.vim
