@@ -5,16 +5,18 @@ use warnings;
 
 use Config::GitLike;
 use FindBin qw($Bin);
+use File::Copy;
 use Switch;
 use Data::Dumper;
 
-our $VERSION = "0.1";
+our $VERSION = "2.0alpha1";
 
 my @args = @ARGV;
 
 my $config = Config::GitLike->new(confname => 'hmlnrc');
-
+my $backup = "~/.dotfile.bak";
 my $debug = $config->get( key => 'hmln.debug', as => 'bool', );
+
 if ($debug) {
     print "-- Debug Enabled --\n";
     print "args: "; foreach (@args) { print "$_ " }; print "\n";
@@ -38,13 +40,13 @@ sub _help {
     print "\tinit\n";
     print "\t\tRead the config file and create a .gitconfig file, run\n";
     print "\t\t`git submodule init' and `git submodule update', then create\n";
-    print "\t\tsymbolic links as specified.\n";
+    print "\t\tsymbolic links as specified. -- Not yet implemented.\n";
     print "\tupdate\n";
     print "\t\tUpdate all the submodules contained in the dotfile directory.\n";
     print "\thelp\n";
     print "\t\tPrint this message.\n";
     print "\trm\n";
-    print "\t\tNot yet implemented.\n";
+    print "\t\tRemove a submodule. -- Not yet implemented.\n";
     print "\n";
     print "Project homepage is http://www.hdonnay.com/projects/hmln\n";
     exit 0;
@@ -71,6 +73,14 @@ sub _add {
         $link = "~/.".$folder;
     };
     if ($debug) {print "$link\n"};
+    if ( -e $link ) {
+        if ( -l $link ) {
+            unlink $link;
+        } else {
+            mkdir $backup, 0755 unless -d $backup;
+            move $link, $backup."/".$link;
+        };
+    };
     symlink $folder, $link;
     if ($debug) {print "linking done, write config.\n"};
     $config->group_set(
@@ -101,13 +111,16 @@ sub _list {
 sub _init {
 }
 
+sub _remove {
+}
+
 sub _update {
     if ($debug) {print "begin update\n"};
 
     if (scalar @args > 1) {
         print "+Extra arguments supplied, ignoring.\n";
     };
-    my @command = ("git", "submodule", "update");
+    my @command = ("git", "submodule", "update", "--init");
     system(@command);
 }
 
@@ -119,6 +132,6 @@ switch ($args[0]) {
     case "add"    { _add }
     case "ls"     { _list }
     case "update" { _update }
-    case "init"   { _init }
+    case "init"   { _help }
     else          { _help }
 }
