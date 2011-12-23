@@ -14,6 +14,8 @@ our $VERSION = "2.0alpha1";
 my @args = @ARGV;
 
 my $config = Config::GitLike->new(confname => 'hmlnrc');
+my $gitmod = Config::GitLike->new(confname => 'gitmodules');
+my $gitcfg = Config::GitLike->new(confname => 'git/config');
 my $backup = "~/.dotfile.bak";
 my $debug = $config->get( key => 'hmln.debug', as => 'bool', );
 
@@ -95,7 +97,7 @@ sub _add {
         ]
     );
     if ($debug) {$config->load; print $config->dump."\n"; };
-    exit(0);
+    exit 0;
 }
 
 sub _list {
@@ -105,13 +107,41 @@ sub _list {
     foreach (sort keys %output) {
         print " $output{$_}\n";
     };
-    exit(0);
+    exit 0;
 }
 
 sub _init {
+    if ( -e "$Bin/.gitmodules" ) {
+        if ($debug) { print "$Bin/.gitmodules exists.\n" };
+        # should compare gitmodules to hmln config, and add modules as needed.
+    } elsif ($config->get_regex( key => "submodule\.(.+)", as => 'bool' )) {
+        if ($debug) { print "$Bin/.gitmodules does not exist, looking at hmln config for submodules.\n" };
+        # gitmodules doesn't exist, do some adding.
+    } else {
+        if ($debug) { print "$Bin/.gitmodules doesn not exist, no submodules found in hmln config.\n" };
+        print "Your config doesn\'t seem to have any submodules in it.\n
+               Use `./link add <url> [target]' to add some.\n";
+    }
+    exit 0;
 }
 
 sub _remove {
+    if ($debug) {print "begin remove\n"};
+
+    if (scalar @args < 1 ) {
+        _help;
+    };
+
+    print "!!\tThe following process will modify your .gitmodules and\n.git/config files.\n\n
+           Please type \'yes\' to continue, or anything else to abort:\t";
+    my $confirm = <>;
+    if ($debug) { print "confirm value: $confirm\n"; };
+    if ($confirm =~ m/!(^yes$)/i) {
+        if ($debug) { print "regex no match\n"; };
+        exit 0;
+    }
+    if ($debug) {print "regex match\n"};
+    #do some deleting
 }
 
 sub _update {
@@ -122,6 +152,7 @@ sub _update {
     };
     my @command = ("git", "submodule", "update", "--init");
     system(@command);
+    exit 0;
 }
 
 if ($debug) {print "switch: $args[0]\n"};
