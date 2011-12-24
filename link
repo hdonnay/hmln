@@ -7,7 +7,6 @@ use Config::GitLike;
 use FindBin qw($Bin);
 use File::Copy;
 use Switch;
-use Data::Dumper;
 
 our $VERSION = "2.0alpha1";
 
@@ -23,9 +22,13 @@ if ($debug) {
     print "-- Debug Enabled --\n";
     print "args: "; foreach (@args) { print "$_ " }; print "\n";
     print "      ".scalar @args."\n";
-    print $config->dump."\n";
-    my %temp = $config->dump;
-    print Dumper %temp;
+    print "--hmln\n";
+    print $config->dump;
+    print "--git/config\n";
+    print $gitcfg->dump;
+    print "--gitmodules\n";
+    print $gitmod->dump;
+    print "--\n";
 };
 
 sub _help {
@@ -47,7 +50,7 @@ sub _help {
     print "\t\tUpdate all the submodules contained in the dotfile directory.\n";
     print "\thelp\n";
     print "\t\tPrint this message.\n";
-    print "\trm\n";
+    print "\trm <name>\n";
     print "\t\tRemove a submodule. -- Not yet implemented.\n";
     print "\n";
     print "Project homepage is http://www.hdonnay.com/projects/hmln\n";
@@ -61,11 +64,10 @@ sub _add {
         _help;
     };
     my $link;
-    my @command = ( "git", "submodule", "add", "$args[1]" );
-    system(@command);
+    system ( "git", "submodule", "add", "$args[1]" );
     if ($debug) {print "$args[1]\n"};
     my $folder = $args[1];
-    $folder =~ /.*\/(.+?)\.git/;
+    $folder =~ /.*\/(.+)(\.git)?/;
     $folder = $1;
     if ($debug) {print "$folder\n"};
     if (exists $args[2]) {
@@ -126,32 +128,52 @@ sub _init {
 }
 
 sub _remove {
-    if ($debug) {print "begin remove\n"};
+    if ($debug) {print "begin remove\nArgument: $args[1]\n"};
 
-    if (scalar @args < 1 ) {
+    if (scalar @args < 2 ) {
         _help;
     };
 
-    print "!!\tThe following process will modify your .gitmodules and\n.git/config files.\n\n
-           Please type \'yes\' to continue, or anything else to abort:\t";
-    my $confirm = <>;
+    print "!! The following process will modify your .gitmodules and\n";
+    print "   .git/config files. This will also run `git clean,' so be\n";
+    print "   mindful of that\n\n";
+    print "Please type \'yes\' to continue, or anything else to abort: ";
+    my $confirm = <STDIN>;
     if ($debug) { print "confirm value: $confirm\n"; };
-    if ($confirm =~ m/!(^yes$)/i) {
+    if (not $confirm =~ /^yes$/i) {
         if ($debug) { print "regex no match\n"; };
+        print "Abort.\n";
         exit 0;
     }
     if ($debug) {print "regex match\n"};
-    #do some deleting
+    if ( ($config->get_regexp(key => "submodule\."."$args[1]"."\..+")) and
+         ($gitcfg->get_regexp(key => "submodule\."."$args[1]"."\..+")) and
+         ($gitmod->get_regexp(key => "submodule\."."$args[1]"."\..+")) ) {
+        my $modpath = $gitmod->get( key => "submodule\."."$args[1]"."\.path" );
+        if ($debug) { print "Path: $modpath\n" };
+        if ($debug) {print "trying hmlnconfig\n" };
+        $config->remove_section( section => "submodule.$args[1]", filename => ${ $config->config_files }[-1] );
+        if ($debug) {print "trying gitconfig\n" };
+        $gitcfg->remove_section( section => "submodule.$args[1]", filename => 'git/confg' );
+        if ($debug) {print "trying gitmodules\n" };
+        $gitmod->remove_section( section => "submodule.$args[1]", filename => 'gitmodules' );
+        if ($debug) {print "runnig git commands\n" };
+        system ( "git", "rm", "--cached", $modpath );
+        system ( "git", "clean", "-fd" );
+    } else {
+        print "The submodule was not found in all configs, you'll need to sort\n";
+        print "it out by hand, or it does not exist.\n";
+    };
+    exit 0;
 }
 
 sub _update {
     if ($debug) {print "begin update\n"};
 
     if (scalar @args > 1) {
-        print "+Extra arguments supplied, ignoring.\n";
+        print "Extra arguments supplied, ignoring.\n";
     };
-    my @command = ("git", "submodule", "update", "--init");
-    system(@command);
+    system ("git", "submodule", "update", "--init");
     exit 0;
 }
 
@@ -159,7 +181,7 @@ if ($debug) {print "switch: $args[0]\n"};
 
 switch ($args[0]) {
     case "help"   { _help }
-    case "rm"     { _help }
+    case "rm"     { _remove }
     case "add"    { _add }
     case "ls"     { _list }
     case "update" { _update }
