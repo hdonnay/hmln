@@ -120,7 +120,7 @@ sub _update {
     if (scalar @args > 1) {
         print "+Extra arguments supplied, ignoring.\n";
     };
-    my @command = ("git", "submodule", "update", "--init", "--checkout",);
+    my @command = ("git", "submodule", "foreach", "git", "pull", "origin", "master",);
     system(@command);
 }
 
