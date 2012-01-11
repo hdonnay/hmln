@@ -173,8 +173,8 @@ sub _update {
     if (scalar @args > 1) {
         print "Extra arguments supplied, ignoring.\n";
     };
-    system ("git", "submodule", "update", "--init");
-    exit 0;
+    my @command = ("git", "submodule", "foreach", "git", "pull", "origin", "master",);
+    system(@command);
 }
 
 if ($debug) {print "switch: $args[0]\n"};
