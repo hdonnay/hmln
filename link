@@ -69,6 +69,7 @@ sub _add {
     if ($debug) {print "$args[1]\n"};
     my $folder = $args[1];
     $folder =~ /.*\/(.+)(\.git)?/;
+    chdir $folder && system ( "git", "checkout", "origin", "master" ) && chdir "..";
     $folder = $1;
     if ($debug) {print "$folder\n"};
     if (exists $args[2]) {
@@ -100,7 +101,7 @@ sub _add {
         ]
     );
     if ($debug) {$config->load; print $config->dump."\n"; };
-    _link;
+    &_link;
     exit 0;
 }
 
