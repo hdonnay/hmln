@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 
+use Data::Dumper;
 use Config::GitLike;
 use FindBin qw($Bin);
 use File::Copy;
@@ -23,11 +24,11 @@ if ($debug) {
     print "args: "; foreach (@args) { print "$_ " }; print "\n";
     print "      ".scalar @args."\n";
     print "--hmln\n";
-    print $config->dump;
+    print $config->dump."\n";
     print "--git/config\n";
-    print $gitcfg->dump;
+    print $gitcfg->dump."\n";
     print "--gitmodules\n";
-    print $gitmod->dump;
+    print $gitmod->dump."\n";
     print "--\n";
 };
 
@@ -99,6 +100,7 @@ sub _add {
         ]
     );
     if ($debug) {$config->load; print $config->dump."\n"; };
+    _link;
     exit 0;
 }
 
@@ -175,6 +177,30 @@ sub _update {
     };
     my @command = ("git", "submodule", "foreach", "git", "pull", "origin", "master",);
     system(@command);
+}
+
+sub _link {
+    local $Data::Dumper::Terse = 1;   # no '$VAR1 = '
+
+    my @dirs;
+    if ($debug) {print "beginning linking\n"};
+
+    opendir my $dh, $Bin || die;
+    @dirs = grep { !/^\./ && -d $_ && -f "$_/.hmln" } readdir $dh;
+    closedir $dh;
+
+    foreach (@dirs) {
+        open my $fh, '<', "$Bin/$_/.hmln";
+        local $/ = undef;
+        my $dump = <$fh>;
+        close $fh;
+        my %localconf = %{ eval $dump };
+        foreach (sort keys %localconf) {
+            symlink "$_", "$localconf{$_}";
+            print $_."\n";
+            print $localconf{$_}."\n";
+        };
+    };
 }
 
 if ($debug) {print "switch: $args[0]\n"};
